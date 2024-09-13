@@ -44,8 +44,8 @@ export class MovePhase extends BattlePhase {
     this.cancelled = false;
   }
 
-  canMove(): boolean {
-    return this.pokemon.isActive(true) && this.move.isUsable(this.pokemon, this.ignorePp) && !!this.targets.length;
+  canMove(ignoreDisableTags?: boolean): boolean {
+    return this.pokemon.isActive(true) && this.move.isUsable(this.pokemon, this.ignorePp, ignoreDisableTags) && !!this.targets.length;
   }
 
   /**Signifies the current move should fail but still use PP */
@@ -63,10 +63,7 @@ export class MovePhase extends BattlePhase {
 
     console.log(Moves[this.move.moveId]);
 
-    if (!this.canMove()) {
-      if (this.move.moveId && this.pokemon.summonData?.disabledMove === this.move.moveId) {
-        this.scene.queueMessage(i18next.t("battle:moveDisabled", { moveName: this.move.getName() }));
-      }
+    if (!this.canMove(true)) {
       if (this.pokemon.isActive(true) && this.move.ppUsed >= this.move.getMovePp()) { // if the move PP was reduced from Spite or otherwise, the move fails
         this.fail();
         this.showMoveText();
@@ -207,7 +204,7 @@ export class MovePhase extends BattlePhase {
       let success = this.move.getMove().applyConditions(this.pokemon, targets[0], this.move.getMove());
       const cancelled = new Utils.BooleanHolder(false);
       let failedText = this.move.getMove().getFailedText(this.pokemon, targets[0], this.move.getMove(), cancelled);
-      if (success && this.scene.arena.isMoveWeatherCancelled(this.move.getMove())) {
+      if (success && this.scene.arena.isMoveWeatherCancelled(this.pokemon, this.move.getMove())) {
         success = false;
       } else if (success && this.scene.arena.isMoveTerrainCancelled(this.pokemon, this.targets, this.move.getMove())) {
         success = false;
